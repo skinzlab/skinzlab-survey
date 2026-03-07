@@ -247,6 +247,7 @@ function App() {
     <div>
       <img src={BANNER_IMG} className="hero-img" alt="Skinzlab"/>
       <div className="hero-text">
+        <p style={{color:"rgba(255,255,255,.45)",fontSize:13,fontWeight:300,marginBottom:16}}>총 3분 · {TOTAL}문항</p>
         <div className="prog-wrap">
           <div className="prog-top"><span>응답 현황</span><span>{answered}/{TOTAL}</span></div>
           <div className="prog-bar"><div className="prog-fill" style={{width:`${progress}%`}}/></div>
