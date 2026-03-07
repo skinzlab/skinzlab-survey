@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SKINCODE · 사전 설문조사</title>
+<meta name="description" content="당신의 피부, 제대로 된 리뷰를 찾아본 적 있으신가요? SKINCODE 사전 설문에 참여해주세요.">
+<meta property="og:title" content="SKINCODE · 피부 리뷰 플랫폼 사전 설문">
+<meta property="og:description" content="3~5분이면 끝! 나와 같은 피부 타입 리뷰 플랫폼, SKINCODE 사전 설문에 참여해주세요.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a2744; --blue: #2563b0; --sky: #5ba4e6;
+    --cream: #f8f5f0; --white: #ffffff; --accent: #e8b84b;
+    --text: #1a1a2e; --muted: #6b7280;
+    --sec1: #E8B84B; --sec2: #C0392B; --sec3: #27AE60; --sec4: #2563B0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Noto Sans KR',sans-serif; background:var(--cream); color:var(--text); line-height:1.7; -webkit-font-smoothing:antialiased; }
+  button { font-family:inherit; }
+
+  .hero { background:linear-gradient(135deg,var(--navy) 0%,#2a3f7a 60%,#1e5ca8 100%); padding:36px 24px 28px; text-align:center; position:relative; }
+  .hero::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg,transparent,transparent 30px,rgba(255,255,255,.03) 30px,rgba(255,255,255,.03) 31px); }
+  .hero * { position:relative; }
+  .badge { display:inline-block; background:var(--accent); color:var(--navy); font-size:11px; font-weight:700; letter-spacing:2px; padding:4px 14px; border-radius:20px; margin-bottom:14px; }
+  .hero h1 { color:#fff; font-size:22px; font-weight:700; margin-bottom:8px; line-height:1.4; }
+  .hero h1 em { color:var(--accent); font-style:normal; }
+  .hero .sub { color:rgba(255,255,255,.7); font-size:13px; margin-bottom:20px; }
+  .prog-wrap { max-width:400px; margin:0 auto; }
+  .prog-top { display:flex; justify-content:space-between; margin-bottom:6px; }
+  .prog-top span:first-child { color:rgba(255,255,255,.8); font-size:12px; }
+  .prog-top span:last-child { color:var(--accent); font-size:12px; font-weight:700; }
+  .prog-bar { background:rgba(255,255,255,.2); border-radius:8px; height:6px; }
+  .prog-fill { background:var(--accent); height:6px; border-radius:8px; transition:width .3s; }
+
+  .tabs { display:flex; overflow-x:auto; background:#fff; border-bottom:1px solid #e2e8f0; }
+  .tabs button { flex:1; min-width:80px; padding:12px 8px; border:none; cursor:pointer; font-size:12px; background:#fafafa; color:var(--muted); border-bottom:3px solid transparent; transition:all .2s; white-space:nowrap; }
+  .tabs button.active { background:#fff; font-weight:700; }
+
+  .container { max-width:720px; margin:0 auto; padding:24px 16px 40px; }
+  .qcard { background:#fff; border-radius:14px; padding:22px 20px; margin-bottom:14px; border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(26,39,68,.05); }
+  .qlabel { font-size:11px; font-weight:700; color:var(--sky); letter-spacing:1.5px; margin-bottom:6px; }
+  .qlabel .req { background:#fee2e2; color:#dc2626; font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px; margin-left:8px; }
+  .qlabel .multi { background:#e0f2fe; color:#0369a1; font-size:10px; padding:1px 7px; border-radius:10px; margin-left:6px; }
+  .qtext { font-size:15px; font-weight:700; color:var(--navy); margin-bottom:14px; line-height:1.6; }
+
+  .opt { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; border:1.5px solid #e2e8f0; background:#fafafa; cursor:pointer; font-size:14px; color:#374151; transition:all .15s; user-select:none; margin-bottom:7px; }
+  .opt:hover { border-color:#cbd5e1; }
+  .opt.sel { font-weight:600; }
+  .opt .dot { width:18px; height:18px; border:2px solid #cbd5e1; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+  .opt .dot.radio { border-radius:50%; }
+  .opt .dot.check { border-radius:4px; }
+  .opt.sel .dot { background:currentColor; border-color:currentColor; }
+  .opt.sel .dot::after { content:''; display:block; width:8px; height:8px; background:#fff; }
+  .opt.sel .dot.radio::after { border-radius:50%; }
+  .opt.sel .dot.check::after { border-radius:2px; }
+
+  .scale-row { display:flex; gap:8px; }
+  .scale-item { flex:1; text-align:center; padding:12px 4px 8px; border-radius:10px; border:1.5px solid #e2e8f0; background:#fafafa; cursor:pointer; transition:all .15s; user-select:none; }
+  .scale-item:hover { border-color:#cbd5e1; }
+  .scale-item .num { font-size:18px; font-weight:700; color:var(--navy); }
+  .scale-item .lbl { font-size:10px; color:var(--muted); margin-top:2px; line-height:1.3; }
+  .scale-item.sel .num { color:#fff; }
+  .scale-item.sel .lbl { color:rgba(255,255,255,.85); }
+
+  textarea, input[type=email] { width:100%; border:1.5px solid #e2e8f0; border-radius:8px; padding:12px 14px; font-size:14px; font-family:inherit; background:#fafafa; outline:none; color:#374151; box-sizing:border-box; transition:border .2s; }
+  textarea { resize:none; height:80px; }
+  textarea:focus, input[type=email]:focus { border-color:var(--blue); }
+
+  .note { margin-top:10px; padding:7px 12px; background:#eff6ff; border-radius:6px; border-left:3px solid var(--sky); font-size:12px; color:#1e40af; }
+
+  .nav-row { display:flex; gap:12px; margin-top:8px; }
+  .btn { padding:14px; border-radius:10px; border:none; font-size:15px; font-weight:700; cursor:pointer; transition:all .2s; }
+  .btn-outline { border:2px solid var(--navy); background:#fff; color:var(--navy); }
+  .btn-primary { background:var(--navy); color:#fff; }
+  .btn:disabled { background:#94a3b8; cursor:not-allowed; }
+
+  .fb-status { text-align:center; margin-top:16px; }
+  .fb-dot { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); }
+  .fb-dot::before { content:''; width:6px; height:6px; border-radius:50%; background:#22c55e; }
+
+  .results-btn { display:block; margin:12px auto 0; background:none; border:1px solid #cbd5e1; border-radius:8px; padding:8px 20px; font-size:13px; color:var(--muted); cursor:pointer; }
+
+  /* Done */
+  .done-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .done-card { background:#fff; border-radius:20px; padding:48px 36px; text-align:center; max-width:480px; box-shadow:0 8px 32px rgba(26,39,68,.1); }
+  .done-card .icon { font-size:56px; margin-bottom:16px; }
+  .done-card h2 { color:var(--navy); font-size:22px; font-weight:700; margin-bottom:12px; }
+  .done-card p { color:var(--muted); font-size:14px; line-height:1.8; margin-bottom:28px; }
+  .done-info { background:#eff6ff; border-radius:12px; padding:16px 20px; margin-bottom:28px; text-align:left; }
+
+  /* Results */
+  .res-header { background:linear-gradient(135deg,var(--navy),#2a3f7a); padding:28px 24px; text-align:center; }
+  .res-header h1 { color:#fff; font-size:22px; font-weight:700; margin-bottom:6px; }
+  .res-header p { color:rgba(255,255,255,.7); font-size:13px; }
+  .res-badge { display:inline-block; background:var(--accent); color:var(--navy); font-weight:700; font-size:16px; padding:8px 24px; border-radius:20px; margin-top:12px; }
+  .sec-title { display:flex; align-items:center; gap:12px; margin:32px 0 16px; }
+  .sec-bar { width:10px; height:32px; border-radius:4px; }
+  .sec-title span { font-size:16px; font-weight:700; color:var(--navy); }
+  .bar-wrap { background:#f1f5f9; border-radius:6px; height:8px; margin-top:4px; }
+  .bar-fill { height:8px; border-radius:6px; transition:width .6s ease; }
+  .email-list { margin-top:24px; background:#fff; border-radius:14px; padding:20px; border:2px solid #22c55e; }
+  .email-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#f0fdf4; border-radius:8px; border-left:3px solid #22c55e; margin-bottom:8px; }
+
+  .err-box { background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:16px 20px; margin-bottom:16px; }
+
+  @media(max-width:480px) {
+    .hero h1 { font-size:19px; }
+    .scale-row { gap:4px; }
+    .scale-item { padding:10px 2px 6px; }
+    .scale-item .num { font-size:16px; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// ─── Firebase Config ──────────────────────────────
+const FIREBASE_API_KEY = "AIzaSyB8whBafl6c0HQtinOUh0ZgXHBUL9f1SuY";
+const FIREBASE_PROJECT_ID = "skinzlab-msti";
+const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
+
+const firestoreAPI = {
+  async addResponse(answers) {
+    const url = `${FIRESTORE_BASE}/responses?key=${FIREBASE_API_KEY}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields: {
+        data: { stringValue: JSON.stringify(answers) },
+        submitted_at: { integerValue: String(Date.now()) },
+      }}),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error?.message || `Error ${res.status}`);
+    return res.json();
+  },
+  async getAllResponses() {
+    const url = `${FIRESTORE_BASE}/responses?key=${FIREBASE_API_KEY}&pageSize=1000`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error?.message || `Error ${res.status}`);
+    const json = await res.json();
+    if (!json.documents) return [];
+    return json.documents.map(doc => { try { return JSON.parse(doc.fields.data.stringValue); } catch { return null; } }).filter(Boolean);
+  },
+};
+
+// ─── 설문 데이터 ──────────────────────────────────
+const SECTIONS = [
+  { id:"basic", label:"기본 정보", color:"#E8B84B", num:1, questions:[
+    { id:"q_gender", text:"성별을 알려주세요.", type:"single", required:true, options:["여성","남성","기타 / 답변 안 함"] },
+    { id:"q_age", text:"연령대를 알려주세요.", type:"single", required:true, options:["만 18~23세","만 24~27세","만 28~33세","만 34~39세","만 40세 이상"] },
+    { id:"q_spend", text:"한 달에 뷰티 제품 구매에 평균 얼마나 지출하시나요?", type:"single", required:true, options:["3만원 미만","3만원~7만원","7만원~15만원","15만원~30만원","30만원 이상"] },
+  ]},
+  { id:"pain", label:"기존 리뷰 플랫폼 경험", color:"#C0392B", num:2, questions:[
+    { id:"q_source", text:"뷰티 제품 구매 시 어떤 정보를 가장 많이 참고하시나요?", type:"multi", max:2, required:true, options:["화해·글로우픽 등 리뷰 앱","인스타그램·유튜브 등 SNS","네이버 블로그·카페","브랜드 공식몰 리뷰","주변 지인 추천"] },
+    { id:"q_fail", text:"리뷰를 보고 구매했지만 기대와 달랐던 경험이 있으신가요?", type:"single", required:true, options:["자주 있다 (3회 이상/년)","가끔 있다 (1~2회/년)","거의 없다","경험 없음"], note:"📌 구매 실패 경험 빈도 → 문제 규모 수치화" },
+    { id:"q_pain", text:"기존 리뷰 플랫폼에서 불편하거나 신뢰가 가지 않는 부분이 있으신가요?", type:"multi", required:true, options:["광고·협찬 리뷰가 너무 많다","나와 피부 타입이 다른 사람의 리뷰가 섞여 있다","리뷰가 많아도 내 피부에 맞는지 모르겠다","인기 제품 리뷰만 노출되어 다양성이 없다","특별히 불편한 점 없다"], note:"📌 기존 플랫폼 불만 항목별 비율" },
+    { id:"q_need", text:"리뷰를 볼 때 '이 작성자가 나와 피부 타입이 같은지' 확인하고 싶었던 적이 있으신가요?", type:"single", required:true, options:["항상 그렇다","자주 그렇다","가끔 그렇다","그런 생각을 해본 적 없다"], note:"📌 예창패 핵심: 나와 같은 피부타입 리뷰 니즈 수치화" },
+    { id:"q_reason", text:"뷰티 제품 구매 후 후회한 주된 이유는 무엇이었나요?", type:"single", options:["내 피부 타입에 안 맞았다","광고·협찬 리뷰에 속았다","성분이 맞지 않았다","기대와 다른 발색·텍스처","후회한 적 없다"] },
+  ]},
+  { id:"skin", label:"피부 타입 인식", color:"#27AE60", num:3, questions:[
+    { id:"q_know", text:"본인의 피부 타입을 정확히 알고 있다고 생각하시나요?", type:"single", required:true, options:["정확히 알고 있다","대략적으로 알고 있다","잘 모르겠다","전혀 모른다"] },
+    { id:"q_howknow", text:"현재 피부 타입을 어떻게 파악하고 계신가요?", type:"multi", options:["피부과·에스테틱에서 진단","앱·온라인 자가 진단 테스트","오래 쓴 경험으로 스스로 판단","건성/지성/복합/민감 정도만 안다","잘 모른다"] },
+    { id:"q_axis", text:"피부 타입을 4가지 요소(생활환경 / 유수분 상태 / 민감도 / 루틴 스타일)로 세분화한다면 유용할 것 같으신가요?", type:"scale", required:true, options:["1\n전혀\n아님","2","3\n보통","4","5\n매우\n유용"], note:"📌 32타입 분류 소비자 수용도" },
+    { id:"q_code", text:"MBTI처럼 피부를 코드(예: E-C-S-B)로 표현한다면 활용할 것 같으신가요?", type:"single", options:["매우 그럴 것 같다 – 재밌고 공유하고 싶다","아마 활용할 것 같다","잘 모르겠다","복잡할 것 같아서 안 쓸 것 같다"] },
+  ]},
+  { id:"concept", label:"SKINCODE 컨셉 반응", color:"#2563B0", num:4, questions:[
+    { id:"q_intent", text:'"내 피부 타입과 같은 사람의 리뷰를 먼저 보여주는 플랫폼"이 있다면 사용하실 의향이 있으신가요?', type:"scale", required:true, options:["1\n전혀\n없음","2","3\n보통","4","5\n꼭\n쓰고싶다"], note:"📌 예창패 핵심 데이터: SKINCODE 사용 의향" },
+    { id:"q_feature", text:"위 플랫폼에서 어떤 기능이 가장 중요할 것 같으신가요?", type:"multi", max:2, options:["내 피부 타입과 같은 사람의 리뷰 우선 노출","내 피부 타입에 맞는 제품 추천","광고·협찬 리뷰 자동 분리/표시","타입별 만족도 통계 확인","비슷한 피부 타입 커뮤니티"] },
+    { id:"q_trust", text:"이 기능이 있다면 기존 플랫폼보다 더 신뢰할 수 있을 것 같으신가요?", type:"single", options:["훨씬 더 신뢰할 것 같다","조금 더 신뢰할 것 같다","비슷할 것 같다","잘 모르겠다"] },
+    { id:"q_nps", text:"이 플랫폼이 출시되면 주변에 추천할 의향이 있으신가요?", type:"scale", options:["1\n전혀\n없음","2","3\n보통","4","5\n꼭\n추천"], note:"📌 NPS(순추천지수) 측정" },
+    { id:"q_open", text:"기대되는 점 또는 걱정되는 점을 자유롭게 적어주세요. (선택)", type:"open" },
+    { id:"q_beta", text:"사전 오픈 베타 테스터에 참여할 의향이 있으신가요?", type:"single", options:["꼭 참여하고 싶다","관심 있다 (정식 출시 시 사용 예정)","잘 모르겠다","참여 의향 없다"], note:"📌 프리유저 모집 전환율 측정" },
+    { id:"q_email", text:"이메일 주소를 남겨주시면 베타 오픈 시 가장 먼저 연락드릴게요! 📩", type:"email", note:"📌 베타 참여 의향자에게만 표시됨 (선택)", showIf:{ qId:"q_beta", values:["꼭 참여하고 싶다","관심 있다 (정식 출시 시 사용 예정)"] } },
+  ]},
+];
+
+const ALL_Q = SECTIONS.flatMap(s => s.questions);
+const TOTAL = ALL_Q.length;
+
+function App() {
+  const [view, setView] = useState("survey");
+  const [answers, setAnswers] = useState({});
+  const [sec, setSec] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [totalResp, setTotalResp] = useState(0);
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [fbErr, setFbErr] = useState(null);
+
+  const section = SECTIONS[sec];
+
+  const handleAnswer = (qId, value, type, max) => {
+    if (type === "multi") {
+      const prev = answers[qId] || [];
+      if (prev.includes(value)) setAnswers(a => ({...a, [qId]: prev.filter(v=>v!==value)}));
+      else { if (max && prev.length >= max) return; setAnswers(a => ({...a, [qId]: [...prev, value]})); }
+    } else setAnswers(a => ({...a, [qId]: value}));
+  };
+
+  const isValid = () => section.questions.every(q => {
+    if (!q.required) return true;
+    const a = answers[q.id];
+    return a && (!Array.isArray(a) || a.length > 0);
+  });
+
+  const handleSubmit = async () => {
+    setSubmitting(true); setFbErr(null);
+    try {
+      await firestoreAPI.addResponse({...answers, submitted_at: Date.now()});
+      const all = await firestoreAPI.getAllResponses();
+      setTotalResp(all.length); setView("done");
+    } catch(e) { setFbErr(e.message); alert("제출 오류: " + e.message); }
+    setSubmitting(false);
+  };
+
+  const loadResults = async () => {
+    setLoading(true); setFbErr(null);
+    try {
+      const all = await firestoreAPI.getAllResponses();
+      const agg = {};
+      ALL_Q.forEach(q => { agg[q.id] = {}; if (q.options) q.options.forEach(o => { agg[q.id][o.replace(/\n/g,' ')] = 0; }); });
+      all.forEach(r => { ALL_Q.forEach(q => { const v = r[q.id]; if (!v) return;
+        if (Array.isArray(v)) v.forEach(x => { if(agg[q.id][x]!==undefined) agg[q.id][x]++; });
+        else if (q.type!=='open'&&q.type!=='email') { const k=String(v).replace(/\n/g,' '); if(agg[q.id][k]!==undefined) agg[q.id][k]++; }
+      });});
+      setResults({ count: all.length, agg, responses: all });
+    } catch(e) { setFbErr(e.message); }
+    setLoading(false);
+  };
+
+  useEffect(() => { if (view==="results") loadResults(); }, [view]);
+
+  const answered = Object.keys(answers).filter(k => { const v=answers[k]; return v&&(Array.isArray(v)?v.length>0:true); }).length;
+  const progress = Math.round((answered/TOTAL)*100);
+
+  // ─── SURVEY ─────────────────────────────────
+  if (view === "survey") return (
+    <div>
+      <div className="hero">
+        <div className="badge">SKINCODE · 사전 설문조사</div>
+        <h1>당신의 피부, 제대로 된 리뷰를<br/><em>찾아본 적 있으신가요?</em></h1>
+        <p className="sub">총 {TOTAL}문항 · 약 3~5분 · 뷰티 관심 2030</p>
+        <div className="prog-wrap">
+          <div className="prog-top"><span>응답 현황</span><span>{answered}/{TOTAL}</span></div>
+          <div className="prog-bar"><div className="prog-fill" style={{width:`${progress}%`}}/></div>
+        </div>
+      </div>
+
+      <div className="tabs">
+        {SECTIONS.map((s,i) => (
+          <button key={s.id} className={sec===i?"active":""} onClick={()=>setSec(i)}
+            style={sec===i?{color:s.color,borderBottomColor:s.color,fontWeight:700}:{}}>
+            {s.num}. {s.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="container">
+        {section.questions.map((q,qi) => {
+          const gi = SECTIONS.slice(0,sec).reduce((a,s)=>a+s.questions.length,0)+qi+1;
+          return (
+            <div key={q.id} className="qcard">
+              <div className="qlabel">
+                Q{gi}
+                {q.required && <span className="req">필수</span>}
+                {q.type==="multi" && <span className="multi">복수선택{q.max?` 최대${q.max}개`:""}</span>}
+              </div>
+              <div className="qtext">{q.text}</div>
+
+              {(q.type==="single"||q.type==="multi") && q.options.map(opt => {
+                const sel = q.type==="multi"?(answers[q.id]||[]).includes(opt):answers[q.id]===opt;
+                return (
+                  <div key={opt} className={`opt ${sel?"sel":""}`} onClick={()=>handleAnswer(q.id,opt,q.type,q.max)}
+                    style={sel?{borderColor:section.color,background:`${section.color}12`,color:section.color}:{}}>
+                    <div className={`dot ${q.type==="multi"?"check":"radio"}`} style={sel?{background:section.color,borderColor:section.color}:{}}/>
+                    {opt}
+                  </div>
+                );
+              })}
+
+              {q.type==="scale" && (
+                <div className="scale-row">
+                  {q.options.map((opt,i) => {
+                    const val=String(i+1); const sel=answers[q.id]===val;
+                    return (
+                      <div key={i} className={`scale-item ${sel?"sel":""}`} onClick={()=>handleAnswer(q.id,val,"single")}
+                        style={sel?{background:section.color,borderColor:section.color}:{}}>
+                        <div className="num">{i+1}</div>
+                        {opt.split("\n").slice(1).map((l,j)=><div key={j} className="lbl">{l}</div>)}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {q.type==="open" && <textarea value={answers[q.id]||""} onChange={e=>setAnswers(a=>({...a,[q.id]:e.target.value}))} placeholder="자유롭게 작성해 주세요..."/>}
+
+              {q.type==="email" && (()=>{
+                const show = q.showIf?(q.showIf.values||[]).includes(answers[q.showIf.qId]):true;
+                if (!show) return null;
+                const v=answers[q.id]||""; const ok=!v||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+                return (<div>
+                  <div style={{marginBottom:10}}><span style={{background:"#dcfce7",color:"#16a34a",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:10}}>베타 참여 의향자 전용</span></div>
+                  <input type="email" value={v} onChange={e=>setAnswers(a=>({...a,[q.id]:e.target.value}))} placeholder="example@email.com" style={!ok?{borderColor:"#f87171"}:v?{borderColor:"#22c55e"}:{}}/>
+                  {!ok && <div style={{fontSize:12,color:"#ef4444",marginTop:6}}>올바른 이메일 형식을 입력해 주세요.</div>}
+                  {v&&ok && <div style={{fontSize:12,color:"#16a34a",marginTop:6}}>✅ 입력 완료! 베타 오픈 시 연락드릴게요.</div>}
+                  <div style={{fontSize:12,color:"var(--muted)",marginTop:8}}>* 이메일은 베타 테스트 안내 외 다른 목적으로 사용되지 않습니다.</div>
+                </div>);
+              })()}
+
+              {q.note && <div className="note">{q.note}</div>}
+            </div>
+          );
+        })}
+
+        <div className="nav-row">
+          {sec>0 && <button className="btn btn-outline" style={{flex:1}} onClick={()=>setSec(s=>s-1)}>← 이전</button>}
+          {sec<SECTIONS.length-1 ? (
+            <button className="btn" style={{flex:2,background:isValid()?section.color:"#cbd5e1",color:"#fff"}}
+              onClick={()=>{if(isValid())setSec(s=>s+1);else alert("필수 항목을 모두 응답해 주세요.");}}>다음 섹션 →</button>
+          ) : (
+            <button className="btn btn-primary" style={{flex:2}} onClick={handleSubmit} disabled={submitting}>
+              {submitting?"제출 중...":"✅ 제출하기"}
+            </button>
+          )}
+        </div>
+
+        <div className="fb-status"><span className="fb-dot">Firebase 연결됨 · {FIREBASE_PROJECT_ID}</span></div>
+        <button className="results-btn" onClick={()=>setView("results")}>📊 실시간 결과 보기</button>
+      </div>
+    </div>
+  );
+
+  // ─── DONE ───────────────────────────────────
+  if (view === "done") return (
+    <div className="done-wrap">
+      <div className="done-card">
+        <div className="icon">💙</div>
+        <h2>설문 완료!</h2>
+        <p>소중한 응답 감사합니다.<br/>SKINCODE가 출시되면 가장 먼저 알려드릴게요.</p>
+        <div className="done-info">
+          <div style={{fontSize:13,color:"#1e40af",fontWeight:700,marginBottom:8}}>📌 지금까지 {totalResp}명이 응답했어요</div>
+          <div style={{fontSize:12,color:"#3b82f6"}}>Firebase Firestore에 실시간 저장됨</div>
+        </div>
+        <button className="btn btn-primary" style={{width:"100%",marginBottom:10}} onClick={()=>setView("results")}>📊 실시간 결과 확인하기</button>
+        <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>{setAnswers({});setSec(0);setView("survey");}}>처음으로 돌아가기</button>
+      </div>
+    </div>
+  );
+
+  // ─── RESULTS ────────────────────────────────
+  if (view === "results") return (
+    <div>
+      <div className="res-header">
+        <h1>📊 실시간 설문 결과</h1>
+        <p>SKINCODE 사전 설문 · Firebase Firestore</p>
+        {results && <div className="res-badge">총 {results.count}명 응답</div>}
+      </div>
+      <div className="container">
+        {fbErr && <div className="err-box">
+          <div style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:6}}>⚠️ Firebase 연결 오류</div>
+          <div style={{fontSize:12,color:"#991b1b"}}>{fbErr}</div>
+        </div>}
+
+        {loading ? <div style={{textAlign:"center",padding:60,color:"var(--muted)"}}>데이터 불러오는 중...</div>
+        : results && results.count===0 ? <div style={{textAlign:"center",padding:60}}><div style={{fontSize:40,marginBottom:16}}>📭</div><p style={{color:"var(--muted)"}}>아직 응답이 없어요.</p></div>
+        : results ? SECTIONS.map(s => (
+          <div key={s.id}>
+            <div className="sec-title"><div className="sec-bar" style={{background:s.color}}/><span>섹션 {s.num}. {s.label}</span></div>
+            {s.questions.filter(q=>q.type!=="open"&&q.type!=="email").map((q,qi) => {
+              const gi=SECTIONS.slice(0,SECTIONS.indexOf(s)).reduce((a,x)=>a+x.questions.length,0)+qi+1;
+              const d=results.agg[q.id]||{}; const t=results.count; const entries=Object.entries(d); const mx=Math.max(...entries.map(([,v])=>v),1);
+              return (
+                <div key={q.id} className="qcard">
+                  <div style={{fontSize:11,color:"var(--sky)",fontWeight:700,letterSpacing:1,marginBottom:6}}>Q{gi}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:"var(--navy)",marginBottom:16,lineHeight:1.5}}>{q.text}</div>
+                  {entries.map(([opt,cnt])=>{
+                    const pct=t>0?Math.round(cnt/t*100):0;
+                    return (<div key={opt} style={{marginBottom:8}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                        <span style={{fontSize:13,color:"#374151"}}>{opt}</span>
+                        <span style={{fontSize:13,fontWeight:700,color:s.color}}>{pct}% ({cnt}명)</span>
+                      </div>
+                      <div className="bar-wrap"><div className="bar-fill" style={{background:cnt===mx?s.color:`${s.color}70`,width:`${pct}%`,minWidth:cnt>0?4:0}}/></div>
+                    </div>);
+                  })}
+                </div>
+              );
+            })}
+            {s.questions.filter(q=>q.type==="open").map(q=>{
+              const opens=results.responses.map(r=>r[q.id]).filter(Boolean);
+              if(!opens.length) return null;
+              return (<div key={q.id} className="qcard">
+                <div style={{fontSize:14,fontWeight:700,color:"var(--navy)",marginBottom:14}}>주관식 응답 ({opens.length}건)</div>
+                {opens.map((txt,i)=><div key={i} style={{padding:"10px 14px",background:"#f8faff",borderRadius:8,marginBottom:8,fontSize:13,color:"#374151",borderLeft:`3px solid ${s.color}`}}>{txt}</div>)}
+              </div>);
+            })}
+          </div>
+        )) : null}
+
+        <div className="nav-row" style={{marginTop:16}}>
+          <button className="btn btn-outline" style={{flex:1}} onClick={()=>setView("survey")}>← 설문으로</button>
+          <button className="btn btn-primary" style={{flex:1}} onClick={loadResults}>🔄 새로고침</button>
+        </div>
+
+        {results && (()=>{
+          const emails=results.responses.filter(r=>r.q_email&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.q_email)).map(r=>({email:r.q_email,beta:r.q_beta||"-"}));
+          if(!emails.length) return <div style={{marginTop:24,background:"#fff",borderRadius:14,padding:20,border:"1px solid #e2e8f0",textAlign:"center"}}><span style={{fontSize:13,color:"var(--muted)"}}>📭 아직 이메일 수집이 없어요.</span></div>;
+          return (<div className="email-list">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <span style={{fontSize:15,fontWeight:700,color:"var(--navy)"}}>📩 베타 신청 이메일 목록</span>
+              <span style={{background:"#dcfce7",color:"#16a34a",fontSize:13,fontWeight:700,padding:"4px 14px",borderRadius:20}}>{emails.length}명</span>
+            </div>
+            {emails.map((e,i)=><div key={i} className="email-item">
+              <span style={{fontSize:14,color:"#374151",fontWeight:500}}>{e.email}</span>
+              <span style={{fontSize:11,color:"#16a34a",background:"#dcfce7",padding:"2px 8px",borderRadius:8}}>{e.beta==="꼭 참여하고 싶다"?"🔥 적극 참여":"👀 관심 있음"}</span>
+            </div>)}
+          </div>);
+        })()}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
