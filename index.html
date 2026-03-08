@@ -199,25 +199,34 @@ function App() {
   const isAdmin = new URLSearchParams(window.location.search).get("admin") === "skinzlab";
   const section = SECTIONS[sec];
 
+  const scrollToNext = (qId) => {
+    setTimeout(() => {
+      const allCards = document.querySelectorAll('.qcard');
+      const currentIdx = Array.from(allCards).findIndex(el => el.querySelector(`[data-qid="${qId}"]`));
+      if (currentIdx >= 0 && currentIdx < allCards.length - 1) {
+        allCards[currentIdx + 1].scrollIntoView({behavior:'smooth',block:'center'});
+      } else if (currentIdx === allCards.length - 1) {
+        const navRow = document.querySelector('.nav-row');
+        if (navRow) navRow.scrollIntoView({behavior:'smooth',block:'center'});
+      }
+    }, 250);
+  };
+
   const handleAnswer = (qId, value, type, max) => {
     if (type === "multi") {
       const prev = answers[qId] || [];
-      if (prev.includes(value)) setAnswers(a => ({...a, [qId]: prev.filter(v=>v!==value)}));
-      else { if (max && prev.length >= max) return; setAnswers(a => ({...a, [qId]: [...prev, value]})); }
+      if (prev.includes(value)) {
+        setAnswers(a => ({...a, [qId]: prev.filter(v=>v!==value)}));
+      } else {
+        if (max && prev.length >= max) return;
+        const newArr = [...prev, value];
+        setAnswers(a => ({...a, [qId]: newArr}));
+        // max에 도달하거나, max 없으면 2개 선택 시 다음 문항으로 스크롤
+        if ((max && newArr.length >= max) || (!max && newArr.length >= 2)) scrollToNext(qId);
+      }
     } else {
       setAnswers(a => ({...a, [qId]: value}));
-      // single/scale 선택 시 다음 문항으로 자동 스크롤
-      setTimeout(() => {
-        const allCards = document.querySelectorAll('.qcard');
-        const currentIdx = Array.from(allCards).findIndex(el => el.querySelector(`[data-qid="${qId}"]`));
-        if (currentIdx >= 0 && currentIdx < allCards.length - 1) {
-          allCards[currentIdx + 1].scrollIntoView({behavior:'smooth',block:'center'});
-        } else if (currentIdx === allCards.length - 1) {
-          // 마지막 문항이면 버튼으로 스크롤
-          const navRow = document.querySelector('.nav-row');
-          if (navRow) navRow.scrollIntoView({behavior:'smooth',block:'center'});
-        }
-      }, 250);
+      scrollToNext(qId);
     }
   };
 
