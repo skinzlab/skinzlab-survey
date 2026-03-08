@@ -187,7 +187,8 @@ const ALL_Q = SECTIONS.flatMap(s => s.questions);
 const TOTAL = ALL_Q.length;
 
 function App() {
-  const [view, setView] = useState("survey");
+  const isAdminUrl = new URLSearchParams(window.location.search).get("admin") === "skinzlab";
+  const [view, setView] = useState(isAdminUrl ? "login" : "survey");
   const [answers, setAnswers] = useState({});
   const [sec, setSec] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -195,8 +196,10 @@ function App() {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fbErr, setFbErr] = useState(null);
+  const [pw, setPw] = useState("");
+  const [pwErr, setPwErr] = useState(false);
+  const [authed, setAuthed] = useState(false);
 
-  const isAdmin = new URLSearchParams(window.location.search).get("admin") === "skinzlab";
   const section = SECTIONS[sec];
 
   const scrollToNext = (qId) => {
@@ -265,6 +268,22 @@ function App() {
 
   const answered = Object.keys(answers).filter(k => { const v=answers[k]; return v&&(Array.isArray(v)?v.length>0:true); }).length;
   const progress = Math.round((answered/TOTAL)*100);
+
+  // ─── LOGIN (admin) ──────────────────────────
+  if (view === "login") return (
+    <div className="done-wrap">
+      <div className="done-card" style={{maxWidth:400}}>
+        <p style={{fontSize:13,color:"#888",marginBottom:6,letterSpacing:1,fontWeight:600}}>SKINZLAB ADMIN</p>
+        <h2 style={{marginBottom:24,fontSize:20}}>대시보드 로그인</h2>
+        <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setPwErr(false);}}
+          placeholder="비밀번호를 입력하세요"
+          onKeyDown={e=>{if(e.key==='Enter'){if(pw==='bar1111'){setAuthed(true);setView('results');}else setPwErr(true);}}}
+          style={{width:"100%",border:`1.5px solid ${pwErr?"#ef4444":"#e5e5e5"}`,borderRadius:8,padding:"14px",fontSize:14,fontFamily:"inherit",background:"#fafafa",outline:"none",marginBottom:8,boxSizing:"border-box"}}/>
+        {pwErr && <div style={{fontSize:12,color:"#ef4444",marginBottom:12}}>비밀번호가 올바르지 않습니다.</div>}
+        <button className="btn btn-primary" style={{width:"100%",marginTop:8}} onClick={()=>{if(pw==='bar1111'){setAuthed(true);setView('results');}else setPwErr(true);}}>로그인</button>
+      </div>
+    </div>
+  );
 
   // ─── SURVEY ─────────────────────────────────
   if (view === "survey") return (
@@ -373,82 +392,171 @@ function App() {
           if(navigator.share) navigator.share(shareData).catch(()=>{});
           else{navigator.clipboard.writeText("https://skinzlab-survey.vercel.app");alert("링크가 복사되었습니다!");}
         }}>공유하기 🔗</button>
-        {isAdmin && <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setView("results")}>📊 실시간 결과 확인하기</button>}
+
       </div>
     </div>
   );
 
-  // ─── RESULTS (admin only) ───────────────────
+  // ─── DASHBOARD (admin only) ─────────────────
   if (view === "results") {
-    if (!isAdmin) { setView("survey"); return null; }
+    if (!authed) { setView("login"); return null; }
+
+    // 분석 함수
+    const analyze = () => {
+      if (!results || results.count === 0) return null;
+      const t = results.count;
+      const agg = results.agg;
+
+      // 핵심 지표 계산
+      const failRate = ((agg.q_fail?.["자주 있다 (3회 이상/년)"]||0) + (agg.q_fail?.["가끔 있다 (1~2회/년)"]||0)) / t * 100;
+      const needRate = ((agg.q_need?.["항상 그렇다"]||0) + (agg.q_need?.["자주 그렇다"]||0)) / t * 100;
+      const painAd = (agg.q_pain?.["광고·협찬 리뷰가 너무 많다"]||0) / t * 100;
+      const painType = (agg.q_pain?.["나와 피부 타입이 다른 사람의 리뷰가 섞여 있다"]||0) / t * 100;
+      const painUnsure = (agg.q_pain?.["리뷰가 많아도 내 피부에 맞는지 모르겠다"]||0) / t * 100;
+      const intentAvg = [1,2,3,4,5].reduce((sum,n) => sum + n * (agg.q_intent?.[String(n)]||0), 0) / t;
+      const intent45 = ((agg.q_intent?.["4"]||0) + (agg.q_intent?.["5"]||0)) / t * 100;
+      const trustRate = ((agg.q_trust?.["훨씬 더 신뢰할 것 같다"]||0) + (agg.q_trust?.["조금 더 신뢰할 것 같다"]||0)) / t * 100;
+      const npsAvg = [1,2,3,4,5].reduce((sum,n) => sum + n * (agg.q_nps?.[String(n)]||0), 0) / t;
+      const betaRate = ((agg.q_beta?.["꼭 참여하고 싶다"]||0) + (agg.q_beta?.["관심 있다 (정식 출시 시 사용 예정)"]||0)) / t * 100;
+      const betaStrong = (agg.q_beta?.["꼭 참여하고 싶다"]||0) / t * 100;
+      const axisAvg = [1,2,3,4,5].reduce((sum,n) => sum + n * (agg.q_axis?.[String(n)]||0), 0) / t;
+      const knowUnsure = ((agg.q_know?.["잘 모르겠다"]||0) + (agg.q_know?.["전혀 모른다"]||0)) / t * 100;
+      const emails = results.responses.filter(r=>r.q_email&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.q_email));
+
+      return { t, failRate, needRate, painAd, painType, painUnsure, intentAvg, intent45, trustRate, npsAvg, betaRate, betaStrong, axisAvg, knowUnsure, emails };
+    };
+
+    const a = results ? analyze() : null;
+
     return (
     <div>
-      <div className="res-header">
-        <h1>📊 실시간 설문 결과</h1>
-        <p>Skinzlab 사전 설문 · Admin</p>
-        {results && <div className="res-badge">총 {results.count}명 응답</div>}
+      <div style={{background:"#000",padding:"28px 24px 20px",textAlign:"center"}}>
+        <p style={{fontSize:11,color:"#666",letterSpacing:2,fontWeight:600,marginBottom:8}}>SKINZLAB ADMIN</p>
+        <h1 style={{color:"#fff",fontSize:20,fontWeight:700,marginBottom:8}}>📊 설문 분석 대시보드</h1>
+        {results && <div style={{display:"inline-block",background:"#fff",color:"#000",fontWeight:700,fontSize:14,padding:"6px 20px",borderRadius:20,marginTop:4}}>총 {results.count}명 응답</div>}
       </div>
       <div className="container">
-        {fbErr && <div className="err-box">
-          <div style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:6}}>⚠️ Firebase 연결 오류</div>
-          <div style={{fontSize:12,color:"#991b1b"}}>{fbErr}</div>
-        </div>}
+        {fbErr && <div className="err-box"><div style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:6}}>⚠️ Firebase 연결 오류</div><div style={{fontSize:12,color:"#991b1b"}}>{fbErr}</div></div>}
 
         {loading ? <div style={{textAlign:"center",padding:60,color:"#888"}}>데이터 불러오는 중...</div>
         : results && results.count===0 ? <div style={{textAlign:"center",padding:60}}><div style={{fontSize:40,marginBottom:16}}>📭</div><p style={{color:"#888"}}>아직 응답이 없어요.</p></div>
-        : results ? SECTIONS.map(s => (
-          <div key={s.id}>
-            <div className="sec-title"><div className="sec-bar" style={{background:s.color}}/><span>섹션 {s.num}. {s.label}</span></div>
-            {s.questions.filter(q=>q.type!=="open"&&q.type!=="email").map((q,qi) => {
-              const gi=SECTIONS.slice(0,SECTIONS.indexOf(s)).reduce((a,x)=>a+x.questions.length,0)+qi+1;
-              const d=results.agg[q.id]||{}; const t=results.count; const entries=Object.entries(d); const mx=Math.max(...entries.map(([,v])=>v),1);
-              return (
-                <div key={q.id} className="qcard">
-                  <div style={{fontSize:11,color:"#888",fontWeight:700,letterSpacing:1,marginBottom:6}}>Q{gi}</div>
-                  <div style={{fontSize:14,fontWeight:700,color:"#111",marginBottom:16,lineHeight:1.5}}>{q.text}</div>
-                  {entries.map(([opt,cnt])=>{
-                    const pct=t>0?Math.round(cnt/t*100):0;
-                    return (<div key={opt} style={{marginBottom:8}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                        <span style={{fontSize:13,color:"#374151"}}>{opt}</span>
-                        <span style={{fontSize:13,fontWeight:700,color:s.color}}>{pct}% ({cnt}명)</span>
-                      </div>
-                      <div className="bar-wrap"><div className="bar-fill" style={{background:cnt===mx?s.color:`${s.color}99`,width:`${pct}%`,minWidth:cnt>0?4:0}}/></div>
-                    </div>);
-                  })}
-                </div>
-              );
-            })}
-            {s.questions.filter(q=>q.type==="open").map(q=>{
-              const opens=results.responses.map(r=>r[q.id]).filter(Boolean);
-              if(!opens.length) return null;
-              return (<div key={q.id} className="qcard">
-                <div style={{fontSize:14,fontWeight:700,color:"#111",marginBottom:14}}>주관식 응답 ({opens.length}건)</div>
-                {opens.map((txt,i)=><div key={i} style={{padding:"10px 14px",background:"#f5f5f5",borderRadius:8,marginBottom:8,fontSize:13,color:"#374151",borderLeft:`3px solid ${s.color}`}}>{txt}</div>)}
-              </div>);
-            })}
-          </div>
-        )) : null}
+        : results && a ? (<>
 
-        <div className="nav-row" style={{marginTop:16}}>
-          <button className="btn btn-outline" style={{flex:1}} onClick={()=>setView("survey")}>← 설문으로</button>
+          {/* ── 핵심 지표 카드 ── */}
+          <div style={{margin:"24px 0 8px"}}><span style={{fontSize:15,fontWeight:700,color:"#111"}}>핵심 지표 요약</span></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
+            {[
+              {label:"구매 실패 경험",value:`${Math.round(a.failRate)}%`,sub:"연 1회 이상",color:a.failRate>=60?"#dc2626":"#f59e0b"},
+              {label:"같은 피부타입 니즈",value:`${Math.round(a.needRate)}%`,sub:"항상+자주",color:a.needRate>=50?"#16a34a":"#f59e0b"},
+              {label:"솔루션 도움도",value:`${a.intentAvg.toFixed(1)}/5`,sub:`상위응답 ${Math.round(a.intent45)}%`,color:a.intentAvg>=3.5?"#16a34a":"#f59e0b"},
+              {label:"기존 플랫폼 대비 신뢰",value:`${Math.round(a.trustRate)}%`,sub:"더 신뢰",color:a.trustRate>=60?"#16a34a":"#f59e0b"},
+              {label:"NPS 평균",value:`${a.npsAvg.toFixed(1)}/5`,sub:"추천 의향",color:a.npsAvg>=3.5?"#16a34a":"#f59e0b"},
+              {label:"베타 참여 의향",value:`${Math.round(a.betaRate)}%`,sub:`적극 ${Math.round(a.betaStrong)}%`,color:a.betaRate>=40?"#16a34a":"#f59e0b"},
+            ].map((m,i)=>(
+              <div key={i} style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #e5e5e5"}}>
+                <div style={{fontSize:11,color:"#888",fontWeight:600,marginBottom:8}}>{m.label}</div>
+                <div style={{fontSize:24,fontWeight:800,color:m.color,marginBottom:2}}>{m.value}</div>
+                <div style={{fontSize:11,color:"#aaa"}}>{m.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── 타당성 분석 ── */}
+          <div style={{margin:"28px 0 12px"}}><span style={{fontSize:15,fontWeight:700,color:"#111"}}>프로젝트 타당성 분석</span></div>
+          <div className="qcard" style={{borderLeft:"4px solid #111"}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#111",marginBottom:12}}>🔍 문제 인식 (Problem Validation)</div>
+            <div style={{fontSize:13,color:"#374151",lineHeight:1.8}}>
+              응답자의 <b>{Math.round(a.failRate)}%</b>가 리뷰 기반 구매 실패를 경험했으며,
+              광고성 리뷰 불만 <b>{Math.round(a.painAd)}%</b>,
+              피부타입 불일치 불만 <b>{Math.round(a.painType)}%</b>,
+              맞는지 모르겠다 <b>{Math.round(a.painUnsure)}%</b>로 나타남.
+              {a.failRate >= 50 ? " ✅ 문제 규모가 충분히 큽니다." : " ⚠️ 더 많은 표본이 필요합니다."}
+            </div>
+          </div>
+          <div className="qcard" style={{borderLeft:"4px solid #111"}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#111",marginBottom:12}}>🎯 니즈 검증 (Need Validation)</div>
+            <div style={{fontSize:13,color:"#374151",lineHeight:1.8}}>
+              "같은 피부타입 리뷰를 보고 싶다"는 니즈가 <b>{Math.round(a.needRate)}%</b> (항상+자주).
+              피부 타입을 정확히 모르는 비율은 <b>{Math.round(a.knowUnsure)}%</b>.
+              4축 세분화 유용도 평균 <b>{a.axisAvg.toFixed(1)}/5</b>.
+              {a.needRate >= 50 ? " ✅ 핵심 니즈가 강력하게 확인됩니다." : " ⚠️ 니즈 강도를 재검토해야 합니다."}
+            </div>
+          </div>
+          <div className="qcard" style={{borderLeft:"4px solid #111"}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#111",marginBottom:12}}>💡 솔루션 반응 (Solution Validation)</div>
+            <div style={{fontSize:13,color:"#374151",lineHeight:1.8}}>
+              솔루션 도움도 평균 <b>{a.intentAvg.toFixed(1)}/5</b> (4~5점 <b>{Math.round(a.intent45)}%</b>).
+              기존 플랫폼 대비 신뢰도 상승 <b>{Math.round(a.trustRate)}%</b>.
+              NPS 평균 <b>{a.npsAvg.toFixed(1)}/5</b>.
+              {a.intent45 >= 50 ? " ✅ 솔루션 수용도가 높습니다." : " ⚠️ 컨셉 보완이 필요할 수 있습니다."}
+            </div>
+          </div>
+          <div className="qcard" style={{borderLeft:"4px solid #111"}}>
+            <div style={{fontSize:13,fontWeight:700,color:"#111",marginBottom:12}}>🚀 전환 가능성 (Conversion)</div>
+            <div style={{fontSize:13,color:"#374151",lineHeight:1.8}}>
+              베타 참여 의향 <b>{Math.round(a.betaRate)}%</b> (적극 참여 <b>{Math.round(a.betaStrong)}%</b>).
+              이메일 수집 <b>{a.emails.length}건</b>.
+              {a.betaRate >= 40 ? " ✅ 초기 사용자 확보 가능성이 높습니다." : " ⚠️ 전환 전략을 강화해야 합니다."}
+            </div>
+          </div>
+
+          {/* ── 전체 문항별 결과 ── */}
+          <div style={{margin:"28px 0 12px"}}><span style={{fontSize:15,fontWeight:700,color:"#111"}}>문항별 상세 결과</span></div>
+          {SECTIONS.map(s => (
+            <div key={s.id}>
+              <div className="sec-title"><div className="sec-bar" style={{background:s.color}}/><span>섹션 {s.num}. {s.label}</span></div>
+              {s.questions.filter(q=>q.type!=="open"&&q.type!=="email").map((q,qi) => {
+                const gi=SECTIONS.slice(0,SECTIONS.indexOf(s)).reduce((ac,x)=>ac+x.questions.length,0)+qi+1;
+                const d=results.agg[q.id]||{}; const t2=results.count; const entries=Object.entries(d); const mx=Math.max(...entries.map(([,v])=>v),1);
+                return (
+                  <div key={q.id} className="qcard">
+                    <div style={{fontSize:11,color:"#888",fontWeight:700,letterSpacing:1,marginBottom:6}}>Q{gi}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"#111",marginBottom:16,lineHeight:1.5}}>{q.text}</div>
+                    {entries.map(([opt,cnt])=>{
+                      const pct=t2>0?Math.round(cnt/t2*100):0;
+                      return (<div key={opt} style={{marginBottom:8}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                          <span style={{fontSize:13,color:"#374151"}}>{opt}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:s.color}}>{pct}% ({cnt}명)</span>
+                        </div>
+                        <div className="bar-wrap"><div className="bar-fill" style={{background:cnt===mx?s.color:`${s.color}99`,width:`${pct}%`,minWidth:cnt>0?4:0}}/></div>
+                      </div>);
+                    })}
+                  </div>
+                );
+              })}
+              {s.questions.filter(q=>q.type==="open").map(q=>{
+                const opens=results.responses.map(r=>r[q.id]).filter(Boolean);
+                if(!opens.length) return null;
+                return (<div key={q.id} className="qcard">
+                  <div style={{fontSize:14,fontWeight:700,color:"#111",marginBottom:14}}>주관식 응답 ({opens.length}건)</div>
+                  {opens.map((txt,i)=><div key={i} style={{padding:"10px 14px",background:"#f5f5f5",borderRadius:8,marginBottom:8,fontSize:13,color:"#374151",borderLeft:`3px solid ${s.color}`}}>{txt}</div>)}
+                </div>);
+              })}
+            </div>
+          ))}
+
+          {/* ── 이메일 목록 ── */}
+          {(()=>{
+            const emails=results.responses.filter(r=>r.q_email&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.q_email)).map(r=>({email:r.q_email,beta:r.q_beta||"-"}));
+            if(!emails.length) return <div style={{marginTop:24,background:"#fff",borderRadius:14,padding:20,border:"1px solid #e5e5e5",textAlign:"center"}}><span style={{fontSize:13,color:"#888"}}>📭 아직 이메일 수집이 없어요.</span></div>;
+            return (<div className="email-list">
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <span style={{fontSize:15,fontWeight:700,color:"#111"}}>📩 베타 신청 이메일 ({emails.length}명)</span>
+              </div>
+              {emails.map((e,i)=><div key={i} className="email-item">
+                <span style={{fontSize:14,color:"#374151",fontWeight:500}}>{e.email}</span>
+                <span style={{fontSize:11,color:"#16a34a",background:"#dcfce7",padding:"2px 8px",borderRadius:8}}>{e.beta==="꼭 참여하고 싶다"?"🔥 적극":"👀 관심"}</span>
+              </div>)}
+            </div>);
+          })()}
+
+        </>) : null}
+
+        <div className="nav-row" style={{marginTop:20}}>
           <button className="btn btn-primary" style={{flex:1}} onClick={loadResults}>🔄 새로고침</button>
         </div>
-
-        {results && (()=>{
-          const emails=results.responses.filter(r=>r.q_email&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.q_email)).map(r=>({email:r.q_email,beta:r.q_beta||"-"}));
-          if(!emails.length) return <div style={{marginTop:24,background:"#fff",borderRadius:14,padding:20,border:"1px solid #e5e5e5",textAlign:"center"}}><span style={{fontSize:13,color:"#888"}}>📭 아직 이메일 수집이 없어요.</span></div>;
-          return (<div className="email-list">
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-              <span style={{fontSize:15,fontWeight:700,color:"#111"}}>📩 베타 신청 이메일 목록</span>
-              <span style={{background:"#dcfce7",color:"#16a34a",fontSize:13,fontWeight:700,padding:"4px 14px",borderRadius:20}}>{emails.length}명</span>
-            </div>
-            {emails.map((e,i)=><div key={i} className="email-item">
-              <span style={{fontSize:14,color:"#374151",fontWeight:500}}>{e.email}</span>
-              <span style={{fontSize:11,color:"#16a34a",background:"#dcfce7",padding:"2px 8px",borderRadius:8}}>{e.beta==="꼭 참여하고 싶다"?"🔥 적극 참여":"👀 관심 있음"}</span>
-            </div>)}
-          </div>);
-        })()}
+        <div style={{textAlign:"center",marginTop:16,fontSize:11,color:"#bbb"}}>Skinzlab Admin Dashboard</div>
       </div>
     </div>
   );
