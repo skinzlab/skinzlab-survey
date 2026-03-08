@@ -368,6 +368,11 @@ function App() {
         <img src={END_IMG} style={{width:"100%",borderRadius:12,marginBottom:28}} alt="Skinzlab Beauty Database"/>
         <div style={{fontSize:13,color:"#999",marginBottom:24}}>문의처 : hello@skinzlab.co</div>
         <button className="btn btn-primary" style={{width:"100%",marginBottom:10}} onClick={()=>{setAnswers({});setSec(0);setView("survey");}}>처음으로 돌아가기</button>
+        <button className="btn btn-outline" style={{width:"100%",marginBottom:10}} onClick={()=>{
+          const shareData = {title:"Skinzlab",text:"약 3분, 당신의 솔직한 피부 경험을 들려주세요.",url:"https://skinzlab-survey.vercel.app"};
+          if(navigator.share) navigator.share(shareData).catch(()=>{});
+          else{navigator.clipboard.writeText("https://skinzlab-survey.vercel.app");alert("링크가 복사되었습니다!");}
+        }}>공유하기 🔗</button>
         {isAdmin && <button className="btn btn-outline" style={{width:"100%"}} onClick={()=>setView("results")}>📊 실시간 결과 확인하기</button>}
       </div>
     </div>
