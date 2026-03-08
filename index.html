@@ -147,7 +147,19 @@ const firestoreAPI = {
     if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error?.message || `Error ${res.status}`);
     const json = await res.json();
     if (!json.documents) return [];
-    return json.documents.map(doc => { try { return JSON.parse(doc.fields.data.stringValue); } catch { return null; } }).filter(Boolean);
+    return json.documents.map(doc => {
+      try {
+        const data = JSON.parse(doc.fields.data.stringValue);
+        data._docId = doc.name.split('/').pop();
+        return data;
+      } catch { return null; }
+    }).filter(Boolean);
+  },
+  async deleteResponse(docId) {
+    const url = `${FIRESTORE_BASE}/responses/${docId}?key=${FIREBASE_API_KEY}`;
+    const res = await fetch(url, { method: "DELETE" });
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error?.message || `Delete failed (${res.status})`);
+    return true;
   },
 };
 
@@ -470,6 +482,7 @@ function App() {
                     <th style={{padding:"8px 6px",textAlign:"left",color:"#888",fontWeight:600}}>유입</th>
                     <th style={{padding:"8px 6px",textAlign:"left",color:"#888",fontWeight:600}}>기기</th>
                     <th style={{padding:"8px 6px",textAlign:"left",color:"#888",fontWeight:600}}>성별/연령</th>
+                    <th style={{padding:"8px 6px",textAlign:"center",color:"#888",fontWeight:600}}>삭제</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -480,6 +493,11 @@ function App() {
                     const refShort = ref === "direct" ? "직접 접속" : ref.includes("kakao") || ref.includes("talk") ? "카카오톡" : ref.includes("instagram") ? "인스타그램" : ref.includes("naver") ? "네이버" : ref.includes("google") ? "Google" : ref.includes("t.co") ? "X(트위터)" : ref.includes("facebook") ? "페이스북" : ref.replace(/https?:\/\//,'').split('/')[0].slice(0,20);
                     const ua = r.ua || "";
                     const device = ua.includes("iPhone") ? "📱iPhone" : ua.includes("Android") ? "📱Android" : ua.includes("iPad") ? "📱iPad" : ua.includes("Mac") ? "💻Mac" : ua.includes("Windows") ? "💻Windows" : "🖥️기타";
+                    const handleDelete = async () => {
+                      if (!r._docId) { alert("이 응답은 삭제할 수 없습니다 (문서 ID 없음)"); return; }
+                      if (!confirm(`응답 #${i+1}을 삭제하시겠습니까?`)) return;
+                      try { await firestoreAPI.deleteResponse(r._docId); loadResults(); } catch(e) { alert("삭제 실패: "+e.message); }
+                    };
                     return (
                       <tr key={i} style={{borderBottom:"1px solid #f0f0f0"}}>
                         <td style={{padding:"8px 6px",color:"#bbb"}}>{i+1}</td>
@@ -487,6 +505,7 @@ function App() {
                         <td style={{padding:"8px 6px"}}><span style={{background:refShort==="카카오톡"?"#fee500":refShort==="인스타그램"?"#f0e0f5":refShort==="직접 접속"?"#f0f0f0":"#e8f4ff",color:refShort==="카카오톡"?"#3c1e00":"#374151",fontSize:11,padding:"2px 8px",borderRadius:8,fontWeight:500}}>{refShort}</span></td>
                         <td style={{padding:"8px 6px",color:"#374151",fontSize:11,whiteSpace:"nowrap"}}>{device}</td>
                         <td style={{padding:"8px 6px",color:"#374151",fontSize:11,whiteSpace:"nowrap"}}>{r.q_gender||"-"}/{r.q_age||"-"}</td>
+                        <td style={{padding:"8px 6px",textAlign:"center"}}><button onClick={handleDelete} style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#dc2626",cursor:"pointer",fontWeight:500}}>삭제</button></td>
                       </tr>
                     );
                   })}
@@ -505,15 +524,16 @@ function App() {
           <div style={{margin:"24px 0 8px"}}><span style={{fontSize:15,fontWeight:700,color:"#111"}}>핵심 지표 요약</span></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
             {[
-              {label:"구매 실패 경험",value:`${Math.round(a.failRate)}%`,sub:"연 1회 이상",color:a.failRate>=60?"#dc2626":"#f59e0b"},
-              {label:"같은 피부타입 니즈",value:`${Math.round(a.needRate)}%`,sub:"항상+자주",color:a.needRate>=50?"#16a34a":"#f59e0b"},
-              {label:"솔루션 도움도",value:`${a.intentAvg.toFixed(1)}/5`,sub:`상위응답 ${Math.round(a.intent45)}%`,color:a.intentAvg>=3.5?"#16a34a":"#f59e0b"},
-              {label:"기존 플랫폼 대비 신뢰",value:`${Math.round(a.trustRate)}%`,sub:"더 신뢰",color:a.trustRate>=60?"#16a34a":"#f59e0b"},
-              {label:"NPS 평균",value:`${a.npsAvg.toFixed(1)}/5`,sub:"추천 의향",color:a.npsAvg>=3.5?"#16a34a":"#f59e0b"},
-              {label:"베타 참여 의향",value:`${Math.round(a.betaRate)}%`,sub:`적극 ${Math.round(a.betaStrong)}%`,color:a.betaRate>=40?"#16a34a":"#f59e0b"},
+              {label:"구매 실패 경험",value:`${Math.round(a.failRate)}%`,sub:"연 1회 이상",color:a.failRate>=60?"#dc2626":"#f59e0b",desc:"리뷰 보고 샀는데 기대와 달랐던 비율"},
+              {label:"같은 피부타입 니즈",value:`${Math.round(a.needRate)}%`,sub:"항상+자주",color:a.needRate>=50?"#16a34a":"#f59e0b",desc:"작성자의 피부타입을 확인하고 싶었던 비율"},
+              {label:"솔루션 도움도",value:`${a.intentAvg.toFixed(1)}/5`,sub:`상위응답 ${Math.round(a.intent45)}%`,color:a.intentAvg>=3.5?"#16a34a":"#f59e0b",desc:"비슷한 피부 후기만 따로 볼 수 있다면 도움이 될지"},
+              {label:"기존 플랫폼 대비 신뢰",value:`${Math.round(a.trustRate)}%`,sub:"더 신뢰",color:a.trustRate>=60?"#16a34a":"#f59e0b",desc:"화해·글로우픽보다 더 신뢰할 수 있을지"},
+              {label:"NPS 평균",value:`${a.npsAvg.toFixed(1)}/5`,sub:"추천 의향",color:a.npsAvg>=3.5?"#16a34a":"#f59e0b",desc:"주변에 추천할 의향 (순추천지수)"},
+              {label:"베타 참여 의향",value:`${Math.round(a.betaRate)}%`,sub:`적극 ${Math.round(a.betaStrong)}%`,color:a.betaRate>=40?"#16a34a":"#f59e0b",desc:"사전 베타 테스트에 참여하겠다는 비율"},
             ].map((m,i)=>(
               <div key={i} style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #e5e5e5"}}>
-                <div style={{fontSize:11,color:"#888",fontWeight:600,marginBottom:8}}>{m.label}</div>
+                <div style={{fontSize:11,color:"#888",fontWeight:600,marginBottom:4}}>{m.label}</div>
+                <div style={{fontSize:11,color:"#bbb",marginBottom:8,lineHeight:1.4}}>{m.desc}</div>
                 <div style={{fontSize:24,fontWeight:800,color:m.color,marginBottom:2}}>{m.value}</div>
                 <div style={{fontSize:11,color:"#aaa"}}>{m.sub}</div>
               </div>
@@ -597,11 +617,23 @@ function App() {
 
           {/* ── 이메일 목록 ── */}
           {(()=>{
-            const emails=results.responses.filter(r=>r.q_email&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.q_email)).map(r=>({email:r.q_email,beta:r.q_beta||"-"}));
+            const emails=results.responses.filter(r=>r.q_email&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.q_email)).map(r=>{
+              const ts=r.submitted_at?new Date(typeof r.submitted_at==="number"?r.submitted_at:parseInt(r.submitted_at)):null;
+              return {email:r.q_email, beta:r.q_beta||"-", gender:r.q_gender||"-", age:r.q_age||"-", time:ts?`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')} ${String(ts.getHours()).padStart(2,'0')}:${String(ts.getMinutes()).padStart(2,'0')}`:"-"};
+            });
+            const exportCSV = () => {
+              const BOM = "\uFEFF";
+              const header = "이메일,베타참여의향,성별,연령,응답시간\n";
+              const rows = emails.map(e => `${e.email},${e.beta},${e.gender},${e.age},${e.time}`).join("\n");
+              const blob = new Blob([BOM + header + rows], {type:"text/csv;charset=utf-8;"});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a"); a.href=url; a.download=`skinzlab_emails_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+            };
             if(!emails.length) return <div style={{marginTop:24,background:"#fff",borderRadius:14,padding:20,border:"1px solid #e5e5e5",textAlign:"center"}}><span style={{fontSize:13,color:"#888"}}>📭 아직 이메일 수집이 없어요.</span></div>;
             return (<div className="email-list">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                 <span style={{fontSize:15,fontWeight:700,color:"#111"}}>📩 베타 신청 이메일 ({emails.length}명)</span>
+                <button onClick={exportCSV} style={{background:"#111",color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>📥 엑셀 저장</button>
               </div>
               {emails.map((e,i)=><div key={i} className="email-item">
                 <span style={{fontSize:14,color:"#374151",fontWeight:500}}>{e.email}</span>
