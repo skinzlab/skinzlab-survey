@@ -271,7 +271,7 @@ function App() {
 
       <div className="tabs">
         {SECTIONS.map((s,i) => (
-          <button key={s.id} className={sec===i?"active":""} onClick={()=>{setSec(i);document.querySelector('.tabs').scrollIntoView({behavior:'smooth'});}}>
+          <button key={s.id} className={sec===i?"active":""} onClick={()=>{setSec(i);setTimeout(()=>{const fc=document.querySelector('.qcard');if(fc)fc.scrollIntoView({behavior:'smooth',block:'start'});},50);}}>
             {s.num}. {s.label}
           </button>
         ))}
@@ -335,10 +335,10 @@ function App() {
         })}
 
         <div className="nav-row">
-          {sec>0 && <button className="btn btn-outline" style={{flex:1}} onClick={()=>{setSec(s=>s-1);document.querySelector('.tabs').scrollIntoView({behavior:'smooth'});}}>← 이전</button>}
+          {sec>0 && <button className="btn btn-outline" style={{flex:1}} onClick={()=>{setSec(s=>s-1);setTimeout(()=>{const fc=document.querySelector('.qcard');if(fc)fc.scrollIntoView({behavior:'smooth',block:'start'});},50);}}>← 이전</button>}
           {sec<SECTIONS.length-1 ? (
             <button className="btn" style={{flex:2,background:isValid()?"#111":"#ccc",color:"#fff"}}
-              onClick={()=>{if(isValid()){setSec(s=>s+1);document.querySelector('.tabs').scrollIntoView({behavior:'smooth'});}else alert("필수 항목을 모두 응답해 주세요.");}}>다음 섹션 →</button>
+              onClick={()=>{if(isValid()){setSec(s=>s+1);setTimeout(()=>{const fc=document.querySelector('.qcard');if(fc)fc.scrollIntoView({behavior:'smooth',block:'start'});},50);}else alert("필수 항목을 모두 응답해 주세요.");}}>다음 섹션 →</button>
           ) : (
             <button className="btn btn-primary" style={{flex:2}} onClick={handleSubmit} disabled={submitting}>
               {submitting?"제출 중...":"제출하기"}
@@ -355,7 +355,7 @@ function App() {
   if (view === "done") return (
     <div className="done-wrap">
       <div className="done-card">
-        <h2 style={{marginBottom:20}}>참여해주셔서 감사합니다.</h2>
+        <h2 style={{marginBottom:20}}>참여해주셔서 감사합니다 ✨</h2>
         <img src={END_IMG} style={{width:"100%",borderRadius:12,marginBottom:28}} alt="Skinzlab Beauty Database"/>
         <div style={{fontSize:13,color:"#999",marginBottom:24}}>문의처 : hello@skinzlab.co</div>
         <button className="btn btn-primary" style={{width:"100%",marginBottom:10}} onClick={()=>{setAnswers({});setSec(0);setView("survey");}}>처음으로 돌아가기</button>
