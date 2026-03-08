@@ -204,7 +204,21 @@ function App() {
       const prev = answers[qId] || [];
       if (prev.includes(value)) setAnswers(a => ({...a, [qId]: prev.filter(v=>v!==value)}));
       else { if (max && prev.length >= max) return; setAnswers(a => ({...a, [qId]: [...prev, value]})); }
-    } else setAnswers(a => ({...a, [qId]: value}));
+    } else {
+      setAnswers(a => ({...a, [qId]: value}));
+      // single/scale 선택 시 다음 문항으로 자동 스크롤
+      setTimeout(() => {
+        const allCards = document.querySelectorAll('.qcard');
+        const currentIdx = Array.from(allCards).findIndex(el => el.querySelector(`[data-qid="${qId}"]`));
+        if (currentIdx >= 0 && currentIdx < allCards.length - 1) {
+          allCards[currentIdx + 1].scrollIntoView({behavior:'smooth',block:'center'});
+        } else if (currentIdx === allCards.length - 1) {
+          // 마지막 문항이면 버튼으로 스크롤
+          const navRow = document.querySelector('.nav-row');
+          if (navRow) navRow.scrollIntoView({behavior:'smooth',block:'center'});
+        }
+      }, 250);
+    }
   };
 
   const isValid = () => section.questions.every(q => {
@@ -268,6 +282,7 @@ function App() {
           const gi = SECTIONS.slice(0,sec).reduce((a,s)=>a+s.questions.length,0)+qi+1;
           return (
             <div key={q.id} className="qcard">
+              <span data-qid={q.id} style={{display:"none"}}/>
               <div className="qlabel">
                 Q{gi}
                 {q.required && <span className="req">필수</span>}
