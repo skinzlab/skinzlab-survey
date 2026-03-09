@@ -212,6 +212,7 @@ function App() {
   const [pwErr, setPwErr] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [showResp, setShowResp] = useState(false);
+  const [demoQ, setDemoQ] = useState(null);
   const GOAL = 50;
 
   const section = SECTIONS[sec];
@@ -601,6 +602,22 @@ function App() {
               {s.questions.filter(q=>q.type!=="open"&&q.type!=="email").map((q,qi) => {
                 const gi=SECTIONS.slice(0,SECTIONS.indexOf(s)).reduce((ac,x)=>ac+x.questions.length,0)+qi+1;
                 const d=results.agg[q.id]||{}; const t2=results.count; const entries=Object.entries(d); const mx=Math.max(...entries.map(([,v])=>v),1);
+                const isDemoOpen = demoQ === q.id;
+                // 크로스탭 분석 데이터 생성
+                const buildCrossTab = () => {
+                  const genders = ["여성","남성"];
+                  const ages = ["만 18~23세","만 24~27세","만 28~33세","만 34~39세","만 40세 이상"];
+                  const optKeys = entries.map(([k])=>k);
+                  const crossG = {}; const crossA = {};
+                  optKeys.forEach(k => { crossG[k] = {}; crossA[k] = {}; genders.forEach(g => crossG[k][g]=0); ages.forEach(a => crossA[k][a]=0); });
+                  results.responses.forEach(r => {
+                    const val = r[q.id]; if (!val) return;
+                    const g = r.q_gender || "기타"; const age = r.q_age || "미응답";
+                    const vals = Array.isArray(val) ? val : [q.type==="scale" ? String(val) : String(val).replace(/\n/g,' ')];
+                    vals.forEach(v => { if (crossG[v]) { if(crossG[v][g]!==undefined) crossG[v][g]++; } if (crossA[v]) { if(crossA[v][age]!==undefined) crossA[v][age]++; } });
+                  });
+                  return {genders, ages, optKeys, crossG, crossA};
+                };
                 return (
                   <div key={q.id} className="qcard">
                     <div style={{fontSize:11,color:"#888",fontWeight:700,letterSpacing:1,marginBottom:6}}>Q{gi}</div>
@@ -616,6 +633,72 @@ function App() {
                         <div className="bar-wrap"><div className="bar-fill" style={{background:cnt===mx?s.color:`${s.color}99`,width:`${pct}%`,minWidth:cnt>0?4:0}}/></div>
                       </div>);
                     })}
+                    {/* 성별/연령 분석 토글 */}
+                    <div style={{marginTop:12,textAlign:"right"}}>
+                      <button onClick={()=>setDemoQ(isDemoOpen?null:q.id)} style={{background:"none",border:"1px solid #ddd",borderRadius:6,padding:"4px 12px",fontSize:11,color:"#666",cursor:"pointer"}}>{isDemoOpen?"▲ 닫기":"📊 성별/연령 분석"}</button>
+                    </div>
+                    {isDemoOpen && (() => {
+                      const {genders, ages, optKeys, crossG, crossA} = buildCrossTab();
+                      const getLabel = (k) => q.type==="scale" ? (q.options[parseInt(k)-1]||k).replace(/\n/g,' ') : k;
+                      return (
+                        <div style={{marginTop:12,borderTop:"1px solid #eee",paddingTop:12}}>
+                          {/* 성별 분석 */}
+                          <div style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:8}}>👤 성별 분석</div>
+                          <div style={{overflowX:"auto"}}>
+                            <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,marginBottom:16}}>
+                              <thead>
+                                <tr style={{background:"#f9f9f9"}}>
+                                  <th style={{padding:"6px 8px",textAlign:"left",borderBottom:"1px solid #eee",color:"#888",fontWeight:600}}>응답</th>
+                                  {genders.map(g=><th key={g} style={{padding:"6px 8px",textAlign:"center",borderBottom:"1px solid #eee",color:"#888",fontWeight:600}}>{g}</th>)}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {optKeys.map(k => {
+                                  const total = Object.values(crossG[k]).reduce((a,b)=>a+b,0);
+                                  return (
+                                    <tr key={k} style={{borderBottom:"1px solid #f5f5f5"}}>
+                                      <td style={{padding:"6px 8px",color:"#374151",fontWeight:500,maxWidth:160,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{getLabel(k)}</td>
+                                      {genders.map(g => {
+                                        const cnt = crossG[k][g];
+                                        const pct = total>0 ? Math.round(cnt/total*100) : 0;
+                                        return <td key={g} style={{padding:"6px 8px",textAlign:"center",color:"#374151"}}>{cnt} <span style={{color:"#aaa"}}>({pct}%)</span></td>;
+                                      })}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          {/* 연령 분석 */}
+                          <div style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:8}}>📅 연령대 분석</div>
+                          <div style={{overflowX:"auto"}}>
+                            <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                              <thead>
+                                <tr style={{background:"#f9f9f9"}}>
+                                  <th style={{padding:"6px 8px",textAlign:"left",borderBottom:"1px solid #eee",color:"#888",fontWeight:600}}>응답</th>
+                                  {ages.map(a=><th key={a} style={{padding:"6px 4px",textAlign:"center",borderBottom:"1px solid #eee",color:"#888",fontWeight:600,fontSize:10,whiteSpace:"nowrap"}}>{a.replace("만 ","")}</th>)}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {optKeys.map(k => {
+                                  const total = Object.values(crossA[k]).reduce((a,b)=>a+b,0);
+                                  return (
+                                    <tr key={k} style={{borderBottom:"1px solid #f5f5f5"}}>
+                                      <td style={{padding:"6px 8px",color:"#374151",fontWeight:500,maxWidth:160,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{getLabel(k)}</td>
+                                      {ages.map(a => {
+                                        const cnt = crossA[k][a];
+                                        const pct = total>0 ? Math.round(cnt/total*100) : 0;
+                                        return <td key={a} style={{padding:"6px 4px",textAlign:"center",color:"#374151"}}>{cnt} <span style={{color:"#aaa"}}>({pct}%)</span></td>;
+                                      })}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
